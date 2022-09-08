@@ -1,4 +1,3 @@
-from operator import index
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
@@ -18,12 +17,14 @@ class PostMan(QMainWindow):
 
     def setup_table(self):
         self.tModel = QStandardItemModel()
-        self.tModel.setHorizontalHeaderLabels(['字段', '值'])
+        self.tModel.setHorizontalHeaderLabels(['启用', '字段', '值'])
 
         data = self.read_default_headers()
         for index, (key, value) in enumerate(data):
+            item0 = QStandardItem()
+            item0.setCheckable(True)
             self.tModel.appendRow(
-                [QStandardItem(key), QStandardItem(value)])
+                [item0, QStandardItem(key), QStandardItem(value)])
         self.ui.table.setModel(self.tModel)
 
     def read_default_headers(self):
