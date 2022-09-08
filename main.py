@@ -21,7 +21,7 @@ class PostMan(QMainWindow):
     def setup_table(self):
         self.tModel = QStandardItemModel()
         self.tModel.setHorizontalHeaderLabels(['启用', '字段', '值'])
-        self.tHeader = CheckBoxHeader([0], parent=self.ui.table)
+        self.tModel.itemChanged.connect(self.on_model_change)
 
         data = self.read_default_headers()
         for index, (key, value) in enumerate(data):
@@ -38,6 +38,9 @@ class PostMan(QMainWindow):
             2, ReadOnlyDelegate(self.ui.table))
 
         self.ui.table.setModel(self.tModel)
+
+        self.tHeader = CheckBoxHeader([0], parent=self.ui.table)
+        self.tHeader.clicked.connect(self.on_header_click)
         self.ui.table.setHorizontalHeader(self.tHeader)
         self.ui.table.horizontalHeader().setStretchLastSection(True)
         self.ui.table.doubleClicked.connect(self.handle_edit)
@@ -86,6 +89,28 @@ class PostMan(QMainWindow):
         self.dEditor.show()
         self.dEditor.accept_signal.connect(self.handle_accept)
         self.dEditor.exec_()
+
+    def on_model_change(self):
+        for i in range(self.ui.table.model().columnCount()):
+            checked = 0
+            unchecked = 0
+            for j in range(self.ui.table.model().rowCount()):
+                if self.ui.table.model().item(j, i).checkState() == Qt.Checked:
+                    checked += 1
+                elif self.ui.table.model().item(j, i).checkState() == Qt.Unchecked:
+                    unchecked += 1
+
+            if checked and unchecked:
+                self.tHeader.updateCheckState(i, 2)
+            elif checked:
+                self.tHeader.updateCheckState(i, 1)
+            else:
+                self.tHeader.updateCheckState(i, 0)
+
+    def on_header_click(self, index, state):
+        for i in range(self.ui.table.model().rowCount()):
+            item = self.ui.table.model().item(i, index)
+            item.setCheckState(Qt.Checked if state else Qt.Unchecked)
 
 
 class DialogEditor(QDialog):
