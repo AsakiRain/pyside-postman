@@ -26,12 +26,19 @@ class PostMan(QMainWindow):
             self.tModel.appendRow(
                 [item0, QStandardItem(key), QStandardItem(value)])
         self.ui.table.setModel(self.tModel)
+        self.ui.table.setItemDelegateForColumn(
+            0, ReadOnlyDelegate(self.ui.table))
 
     def read_default_headers(self):
         file = open('default_headers.json', 'r')
         data = json.loads(file.read())
         return data.items()
+class ReadOnlyDelegate(QItemDelegate):
+    def __init__(self, parent):
+        super(ReadOnlyDelegate, self).__init__(parent)
 
+    def createEditor(self, parent, option, index):
+        return None
 
 if __name__ == "__main__":
     app = QApplication([])
