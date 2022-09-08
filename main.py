@@ -22,13 +22,11 @@ class PostMan(QMainWindow):
         self.tModel = QStandardItemModel()
         self.tModel.setHorizontalHeaderLabels(['启用', '字段', '值'])
         self.tModel.itemChanged.connect(self.on_model_change)
+        self.ui.table.setModel(self.tModel)
 
-        data = self.read_default_headers()
-        for index, (key, value) in enumerate(data):
-            item0 = QStandardItem()
-            item0.setCheckable(True)
-            self.tModel.appendRow(
-                [item0, QStandardItem(key), QStandardItem(value)])
+        self.tHeader = CheckBoxHeader([0], parent=self.ui.table)
+        self.tHeader.clicked.connect(self.on_header_click)
+        self.ui.table.setHorizontalHeader(self.tHeader)
 
         self.ui.table.setItemDelegateForColumn(
             0, ReadOnlyDelegate(self.ui.table))
@@ -37,13 +35,15 @@ class PostMan(QMainWindow):
         self.ui.table.setItemDelegateForColumn(
             2, ReadOnlyDelegate(self.ui.table))
 
-        self.ui.table.setModel(self.tModel)
-
-        self.tHeader = CheckBoxHeader([0], parent=self.ui.table)
-        self.tHeader.clicked.connect(self.on_header_click)
-        self.ui.table.setHorizontalHeader(self.tHeader)
         self.ui.table.horizontalHeader().setStretchLastSection(True)
         self.ui.table.doubleClicked.connect(self.handle_edit)
+
+        data = self.read_default_headers()
+        for index, (key, value) in enumerate(data):
+            item0 = QStandardItem()
+            item0.setCheckable(True)
+            self.tModel.appendRow(
+                [item0, QStandardItem(key), QStandardItem(value)])
 
     def read_default_headers(self):
         file = open('default_headers.json', 'r')
@@ -54,6 +54,7 @@ class PostMan(QMainWindow):
         if(index.column() == 2):
             self.dEditor = DialogEditor()
             self.dEditor.show()
+
             key_index = QModelIndex(index.model().index(index.row(), 1))
             value_index = QModelIndex(index.model().index(index.row(), 2))
             key = index.model().data(key_index)
@@ -79,25 +80,24 @@ class PostMan(QMainWindow):
         selected = self.ui.table.selectedIndexes()
         indexes = list(set(map(lambda x: x.row(), selected)))
         indexes.reverse()
-        print(indexes)
         for index in indexes:
             self.tModel.removeRow(index)
 
     def handle_add(self):
         self.dEditor = DialogEditor()
         self.dEditor.newItem = True
-        self.dEditor.show()
         self.dEditor.accept_signal.connect(self.handle_accept)
+        self.dEditor.show()
         self.dEditor.exec_()
 
     def on_model_change(self):
-        for i in range(self.ui.table.model().columnCount()):
+        for i in range(self.tModel.columnCount()):
             checked = 0
             unchecked = 0
-            for j in range(self.ui.table.model().rowCount()):
-                if self.ui.table.model().item(j, i).checkState() == Qt.Checked:
+            for j in range(self.tModel.rowCount()):
+                if self.tModel.item(j, i).checkState() == Qt.Checked:
                     checked += 1
-                elif self.ui.table.model().item(j, i).checkState() == Qt.Unchecked:
+                elif self.tModel.item(j, i).checkState() == Qt.Unchecked:
                     unchecked += 1
 
             if checked and unchecked:
@@ -109,7 +109,7 @@ class PostMan(QMainWindow):
 
     def on_header_click(self, index, state):
         for i in range(self.ui.table.model().rowCount()):
-            item = self.ui.table.model().item(i, index)
+            item = self.tModel.item(i, index)
             item.setCheckState(Qt.Checked if state else Qt.Unchecked)
 
 
@@ -127,8 +127,8 @@ class DialogEditor(QDialog):
     def accept(self):
         key = self.ui.keyEdit.text()
         value = self.ui.valueEdit.toPlainText()
-        if(not key or not value):
-            QMessageBox.warning(self, '警告', '字段不能为空')
+        if(not key):
+            QMessageBox.warning(self, '警告', '字段名不能为空')
         else:
             self.accept_signal.emit(key, value)
             return super().accept()
