@@ -21,6 +21,7 @@ class PostMan(QMainWindow):
     def setup_table(self):
         self.tModel = QStandardItemModel()
         self.tModel.setHorizontalHeaderLabels(['启用', '字段', '值'])
+        self.tHeader = CheckBoxHeader([0], parent=self.ui.table)
 
         data = self.read_default_headers()
         for index, (key, value) in enumerate(data):
@@ -28,14 +29,18 @@ class PostMan(QMainWindow):
             item0.setCheckable(True)
             self.tModel.appendRow(
                 [item0, QStandardItem(key), QStandardItem(value)])
-        self.ui.table.setModel(self.tModel)
-        self.ui.table.doubleClicked.connect(self.handle_edit)
+
         self.ui.table.setItemDelegateForColumn(
             0, ReadOnlyDelegate(self.ui.table))
         self.ui.table.setItemDelegateForColumn(
             1, LineEditDelegate(self.ui.table))
         self.ui.table.setItemDelegateForColumn(
             2, ReadOnlyDelegate(self.ui.table))
+
+        self.ui.table.setModel(self.tModel)
+        self.ui.table.setHorizontalHeader(self.tHeader)
+        self.ui.table.horizontalHeader().setStretchLastSection(True)
+        self.ui.table.doubleClicked.connect(self.handle_edit)
 
     def read_default_headers(self):
         file = open('default_headers.json', 'r')
@@ -163,6 +168,78 @@ class SpinBoxDelegate(QItemDelegate):
         # 设置更改数值后，单元格的数值
     def setModelData(self, editor, model, index):
         model.setData(index, str(editor.value()) + str(' ') + self.suffix)
+
+
+class CheckBoxHeader(QHeaderView):
+    """自定义表头类"""
+    # 自定义 复选框全选信号
+    clicked = Signal(int, bool)
+    # 这4个变量控制列头复选框的样式，位置以及大小
+    _x_offset = 3
+    _y_offset = 0
+    _width = 20
+    _height = 20
+
+    def __init__(self, column_index, orientation=Qt.Horizontal, parent=None):
+        super(CheckBoxHeader, self).__init__(orientation, parent)
+        self.setSectionsClickable(True)
+
+        if isinstance(column_index, list) or isinstance(column_index, tuple):
+            self.column_index = column_index
+        elif isinstance(column_index, int):
+            self.column_index = [column_index]
+        else:
+            raise RuntimeError('column_index must be a list, tuple or integer')
+
+        self.isChecked = {}
+        for column in self.column_index:
+            self.isChecked[column] = 0
+
+    def paintSection(self, painter, rect, logicalIndex):
+        painter.save()
+        super(CheckBoxHeader, self).paintSection(painter, rect, logicalIndex)
+        painter.restore()
+
+        self._y_offset = int((rect.height() - self._width) / 2.)
+
+        if logicalIndex in self.column_index:
+            option = QStyleOptionButton()
+            option.rect = QRect(
+                rect.x() + self._x_offset, rect.y() + self._y_offset, self._width, self._height)
+            option.state = QStyle.State_Enabled | QStyle.State_Active
+            if self.isChecked[logicalIndex] == 2:
+                option.state |= QStyle.State_NoChange
+            elif self.isChecked[logicalIndex]:
+                option.state |= QStyle.State_On
+            else:
+                option.state |= QStyle.State_Off
+            self.style().drawControl(QStyle.CE_CheckBox, option, painter)
+
+    def updateCheckState(self, index, state):
+        '''
+        记录每个点击checkbox 状态及序号存入dict
+        :param index: 
+        :param state: 
+        :return: 
+        '''
+        self.isChecked[index] = state
+        self.viewport().update()
+
+    def mousePressEvent(self, event):
+        index = self.logicalIndexAt(event.pos())
+        if 0 <= index < self.count():
+            x = self.sectionPosition(index)
+            if x + self._x_offset < event.pos().x() < x + self._x_offset + self._width and self._y_offset < event.pos().y() < self._y_offset + self._height:
+                if self.isChecked[index] == 1:
+                    self.isChecked[index] = 0
+                else:
+                    self.isChecked[index] = 1
+                self.clicked.emit(index, self.isChecked[index])
+                self.viewport().update()
+            else:
+                super(CheckBoxHeader, self).mousePressEvent(event)
+        else:
+            super(CheckBoxHeader, self).mousePressEvent(event)
 
 
 if __name__ == "__main__":
