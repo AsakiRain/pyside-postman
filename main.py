@@ -15,6 +15,8 @@ class PostMan(QMainWindow):
 
     def init(self):
         self.setup_table()
+        self.ui.btnAdd.clicked.connect(self.handle_add)
+        self.ui.btnRemove.clicked.connect(self.handle_remove)
 
     def setup_table(self):
         self.tModel = QStandardItemModel()
@@ -64,6 +66,21 @@ class PostMan(QMainWindow):
         else:
             self.tModel.setData(self.dEditor.key_index, key)
             self.tModel.setData(self.dEditor.value_index, value)
+
+    def handle_remove(self):
+        selected = self.ui.table.selectedIndexes()
+        indexes = list(set(map(lambda x: x.row(), selected)))
+        indexes.reverse()
+        print(indexes)
+        for index in indexes:
+            self.tModel.removeRow(index)
+
+    def handle_add(self):
+        self.dEditor = DialogEditor()
+        self.dEditor.newItem = True
+        self.dEditor.show()
+        self.dEditor.accept_signal.connect(self.handle_accept)
+        self.dEditor.exec_()
 
 
 class DialogEditor(QDialog):
