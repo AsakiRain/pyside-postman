@@ -47,8 +47,10 @@ class PostMan(QMainWindow):
         for index, (key, value) in enumerate(data):
             item0 = QStandardItem()
             item0.setCheckable(True)
+            item0.setCheckState(Qt.Checked)
             self.tModel.appendRow(
                 [item0, QStandardItem(key), QStandardItem(value)])
+        self.on_model_change() # 手动触发一次表头更新，使其显示为全选状态
 
     def read_default_headers(self):
         file = open('default_headers.json', 'r')
