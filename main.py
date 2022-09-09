@@ -1,4 +1,3 @@
-from email import charset
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
@@ -21,6 +20,7 @@ class PostMan(QMainWindow):
         self.setup_table()
         self.ui.btnAdd.clicked.connect(self.handle_add)
         self.ui.btnRemove.clicked.connect(self.handle_remove)
+        self.ui.textURL.returnPressed.connect(self.handle_send)
         self.ui.btnSend.clicked.connect(self.handle_send)
         self.ui.btnClear.clicked.connect(self.handle_clear)
         self.ui.textURL.setText("http://localhost:3000/")
@@ -79,6 +79,7 @@ class PostMan(QMainWindow):
         if(self.dEditor.newItem):
             item0 = QStandardItem()
             item0.setCheckable(True)
+            item0.setCheckState(Qt.Checked)
             self.tModel.appendRow(
                 [item0, QStandardItem(key), QStandardItem(value)])
         else:
@@ -185,8 +186,11 @@ class DialogEditor(QDialog):
         if(not key):
             QMessageBox.warning(self, '警告', '字段名不能为空')
         else:
-            self.accept_signal.emit(key, value)
-            return super().accept()
+            if(key.isascii() and value.isascii()):
+                self.accept_signal.emit(key, value)
+                return super().accept()
+            else:
+                QMessageBox.warning(self, '警告', '字段名和字段值只能是ASCII字符')
 
     def reject(self):
         return super().reject()
@@ -217,11 +221,16 @@ class LineEditDelegate(QItemDelegate):
         editor.setText(self.oText)
 
     def setModelData(self, editor, model, index):
-        if(not editor.text().strip()):
+        key = editor.text().strip()
+        if(not key):
             QMessageBox.warning(self.parent(), '警告', '字段不能为空')
             model.setData(index, self.oText)
         else:
-            model.setData(index, editor.text())
+            if(not key.isascii()):
+                QMessageBox.warning(self.parent(), '警告', '字段只能是ASCII字符')
+                model.setData(index, self.oText)
+            else:
+                model.setData(index, key)
 
 
 class SpinBoxDelegate(QItemDelegate):
