@@ -21,6 +21,7 @@ class PostMan(QMainWindow):
         self.ui.btnRemove.clicked.connect(self.handle_remove)
         self.ui.btnSend.clicked.connect(self.handle_send)
         self.ui.btnClear.clicked.connect(self.handle_clear)
+        self.ui.textURL.setText("http://localhost:3000/")
 
     def setup_table(self):
         self.tModel = QStandardItemModel()
@@ -95,8 +96,13 @@ class PostMan(QMainWindow):
         self.dEditor.exec_()
 
     def handle_send(self):
+        url = self.ui.textURL.text().strip()
+        if not url:
+            return
+        if not url.startswith('http://') and not url.startswith('https://'):
+            QMessageBox.warning(self, '错误', '请输入正确的协议名称')
+            return
         method = self.ui.comboMethod.currentText()
-        url = self.ui.textURL.text()
         req = urllib.request.Request(url, method=method)
         res = urllib.request.urlopen(req).read().decode('utf-8')
         self.ui.textResp.insertPlainText(res)
@@ -140,8 +146,8 @@ class DialogEditor(QDialog):
         self.ui.setupUi(self)
 
     def accept(self):
-        key = self.ui.keyEdit.text()
-        value = self.ui.valueEdit.toPlainText()
+        key = self.ui.keyEdit.text().strip()
+        value = self.ui.valueEdit.toPlainText().strip()
         if(not key):
             QMessageBox.warning(self, '警告', '字段名不能为空')
         else:
@@ -177,7 +183,7 @@ class LineEditDelegate(QItemDelegate):
         editor.setText(self.oText)
 
     def setModelData(self, editor, model, index):
-        if(not editor.text()):
+        if(not editor.text().strip()):
             QMessageBox.warning(self.parent(), '警告', '字段不能为空')
             model.setData(index, self.oText)
         else:
