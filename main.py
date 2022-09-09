@@ -4,7 +4,8 @@ from PySide2.QtWidgets import *
 from ui.ui_postman import Ui_MainWindow
 from ui.ui_dialogEditor import Ui_dialogEditor
 import json
-
+import urllib.request
+import urllib.parse
 
 class PostMan(QMainWindow):
     def __init__(self):
@@ -17,6 +18,7 @@ class PostMan(QMainWindow):
         self.setup_table()
         self.ui.btnAdd.clicked.connect(self.handle_add)
         self.ui.btnRemove.clicked.connect(self.handle_remove)
+        self.ui.btnSend.clicked.connect(self.handle_send)
 
     def setup_table(self):
         self.tModel = QStandardItemModel()
@@ -90,6 +92,13 @@ class PostMan(QMainWindow):
         self.dEditor.show()
         self.dEditor.exec_()
 
+    def handle_send(self):
+        method = self.ui.comboMethod.currentText()
+        url = self.ui.textURL.text()
+        req = urllib.request.Request(url,method=method)
+        res = urllib.request.urlopen(req).read().decode('utf-8')
+        self.ui.textResp.insertPlainText(res)
+        
     def on_model_change(self):
         for i in range(self.tModel.columnCount()):
             checked = 0
