@@ -1,3 +1,4 @@
+from email import charset
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
@@ -50,7 +51,7 @@ class PostMan(QMainWindow):
             item0.setCheckState(Qt.Checked)
             self.tModel.appendRow(
                 [item0, QStandardItem(key), QStandardItem(value)])
-        self.on_model_change() # 手动触发一次表头更新，使其显示为全选状态
+        self.on_model_change()  # 手动触发一次表头更新，使其显示为全选状态
 
     def read_default_headers(self):
         file = open('default_headers.json', 'r')
@@ -105,16 +106,32 @@ class PostMan(QMainWindow):
             QMessageBox.warning(self, '错误', '请输入正确的协议名称')
             return
         method = self.ui.comboMethod.currentText()
+        self.ui.textResp.insertPlainText("%s %s\n" % (method, url))
         headers = {}
         for i in range(self.tModel.rowCount()):
             if self.tModel.item(i, 0).checkState() == Qt.Checked:
                 key = self.tModel.item(i, 1).text().strip()
                 value = self.tModel.item(i, 2).text().strip()
                 headers[key] = value
-        req = urllib.request.Request(url, method=method, headers=headers)
-        res = urllib.request.urlopen(req).read().decode('utf-8')
-        self.ui.textResp.insertPlainText(res)
-        self.ui.textResp.moveCursor(QTextCursor.End)
+        try:
+            req = urllib.request.Request(url, method=method, headers=headers)
+            res = urllib.request.urlopen(req)
+            raw_headers = res.getheaders()
+            headers = {}
+            for (key, value) in raw_headers:
+                headers[key] = value
+            self.ui.textResp.insertPlainText(
+                "Response Headers:\n%s\n" % json.dumps(headers, indent=4))
+            charset = res.headers.get_content_charset()
+            self.ui.textResp.insertPlainText(
+                "Content charset is %s\n" % charset)
+            raw_body = res.read()
+            body = raw_body.decode(charset)
+            self.ui.textResp.insertPlainText("Response Body:\n%s" % body)
+        except Exception as e:
+            self.ui.textResp.insertPlainText(str(e) + '\n')
+        finally:
+            self.ui.textResp.moveCursor(QTextCursor.End)
 
     def handle_clear(self):
         self.ui.textResp.clear()
