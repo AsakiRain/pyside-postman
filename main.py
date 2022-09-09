@@ -100,6 +100,7 @@ class PostMan(QMainWindow):
         req = urllib.request.Request(url, method=method)
         res = urllib.request.urlopen(req).read().decode('utf-8')
         self.ui.textResp.insertPlainText(res)
+        self.ui.textResp.moveCursor(QTextCursor.End)
 
     def handle_clear(self):
         self.ui.textResp.clear()
