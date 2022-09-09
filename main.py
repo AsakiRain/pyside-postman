@@ -7,6 +7,7 @@ from ui.ui_dialogEditor import Ui_dialogEditor
 import json
 import urllib.request
 import urllib.parse
+import gzip
 
 
 class PostMan(QMainWindow):
@@ -116,17 +117,25 @@ class PostMan(QMainWindow):
         try:
             req = urllib.request.Request(url, method=method, headers=headers)
             res = urllib.request.urlopen(req)
+
             raw_headers = res.getheaders()
             headers = {}
             for (key, value) in raw_headers:
                 headers[key] = value
             self.ui.textResp.insertPlainText(
                 "Response Headers:\n%s\n" % json.dumps(headers, indent=4))
+            content = res.read()
+            if 'Content-Encoding' in headers:
+                self.ui.textResp.insertPlainText(
+                    "Content return in %s\n" % headers['Content-Encoding'])
+                if headers['Content-Encoding'] == 'gzip':
+                    content = gzip.decompress(content)
+                else:
+                    raise Exception('Unknown Content-Encoding')
             charset = res.headers.get_content_charset()
             self.ui.textResp.insertPlainText(
                 "Content charset is %s\n" % charset)
-            raw_body = res.read()
-            body = raw_body.decode(charset)
+            body = content.decode(charset)
             self.ui.textResp.insertPlainText("Response Body:\n%s" % body)
         except Exception as e:
             self.ui.textResp.insertPlainText(str(e) + '\n')
