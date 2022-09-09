@@ -167,12 +167,15 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.textResp = QTextEdit(self.widgetRes)
         self.textResp.setObjectName(u"textResp")
+        self.textResp.setEnabled(True)
         sizePolicy2 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.textResp.sizePolicy().hasHeightForWidth())
         self.textResp.setSizePolicy(sizePolicy2)
         self.textResp.setFont(font)
+        self.textResp.setTabletTracking(True)
+        self.textResp.setReadOnly(True)
 
         self.verticalLayout_4.addWidget(self.textResp)
 
