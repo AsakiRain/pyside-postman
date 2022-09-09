@@ -103,7 +103,13 @@ class PostMan(QMainWindow):
             QMessageBox.warning(self, '错误', '请输入正确的协议名称')
             return
         method = self.ui.comboMethod.currentText()
-        req = urllib.request.Request(url, method=method)
+        headers = {}
+        for i in range(self.tModel.rowCount()):
+            if self.tModel.item(i, 0).checkState() == Qt.Checked:
+                key = self.tModel.item(i, 1).text().strip()
+                value = self.tModel.item(i, 2).text().strip()
+                headers[key] = value
+        req = urllib.request.Request(url, method=method, headers=headers)
         res = urllib.request.urlopen(req).read().decode('utf-8')
         self.ui.textResp.insertPlainText(res)
         self.ui.textResp.moveCursor(QTextCursor.End)
